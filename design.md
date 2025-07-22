@@ -57,17 +57,20 @@ The PostgreSQL database will contain the following core tables. Migrations will 
 ## 5. Token and Session Strategy
 
 *   **Signing Algorithm:** All JWTs will be signed using **RS256**.
-*   **Automatic Key Rotation:** The server will automatically generate new RS256 key pairs on a configurable schedule and store them in the `signing_keys` table.
+*   **Automatic Key Rotation:** A **Kubernetes CronJob** will run on a configurable schedule to trigger the key rotation process within the application. This job will call a dedicated, internal API endpoint to generate a new key and add it to the `signing_keys` table.
     *   **JWKS Endpoint:** The server will expose a `/.well-known/jwks.json` endpoint.
     *   **Key ID (`kid`):** Every token will have a `kid` header.
-*   **Authorization Codes:** Short-lived authorization codes will be stored in **Redis** with their associated context (user_id, client_id, pkce_challenge, expiry).
+*   **Authorization Codes:** Short-lived authorization codes will be stored in **Redis**.
 *   **Refresh & SSO Tokens:** Opaque refresh tokens and SSO session tokens will also be stored in **Redis**.
 
 ## 6. Security and Deployment
 
+*   **Key Management (Hybrid Model):**
+    *   The rotating RS256 private keys are stored encrypted in the `signing_keys` PostgreSQL table.
+    *   The **master encryption key** used to encrypt/decrypt the signing keys is stored in a **Kubernetes Secret** and read by the application on startup. This provides a strong separation of concerns.
 *   **TLS:** End-to-end encryption via Cloudflare and Let's Encrypt (`cert-manager`).
 *   **Primary Admin Security:** Access to the Admin Dashboard is primarily secured by requiring authentication from an LDAP source and mandatory 2FA.
 *   **PKCE:** Mandatory for all OAuth 2.1 clients.
 *   **Password Hashing:** **Argon2** for local user passwords.
-*   **Secrets Management:** Kubernetes Secrets for all credentials.
+*   **Secrets Management:** All other credentials (database passwords, Google client secrets) will also be stored as Kubernetes Secrets.
 *   **Deployment:** The entire stack will be defined in Kubernetes manifests for deployment to Minikube (local) or a public cloud provider.

@@ -29,8 +29,9 @@ This document breaks down the development work for the Golang Auth Server. Tasks
 ## Epic 3: OIDC/OAuth 2.1 Core Implementation
 
 - [ ] **3.1: JWT & Key Management:**
-    - [ ] Implement RS256 key generation and storage in the `signing_keys` table.
-    - [ ] Implement automatic key rotation logic (e.g., a background worker).
+    - [ ] Implement RS256 key generation and storage in the `signing_keys` table, ensuring they are encrypted at rest.
+    - [ ] Implement the master encryption key retrieval from a Kubernetes Secret.
+    - [ ] Create a Kubernetes CronJob manifest that calls an internal API endpoint to trigger key rotation.
     - [ ] Create the `/.well-known/jwks.json` endpoint.
 - [ ] **3.2: Admin Bootstrap:**
     - [ ] Implement the one-time admin client bootstrap mechanism on server startup.
@@ -78,3 +79,14 @@ This document breaks down the development work for the Golang Auth Server. Tasks
 - [ ] **6.3: Testing:**
     - [ ] Write unit tests for critical logic (e.g., token generation, password hashing).
     - [ ] Write integration tests for the main OIDC flows.
+
+## Epic 7: CI/CD Pipeline (Post-MVP)
+
+- [ ] **7.1: Pipeline Setup:**
+    - [ ] Choose a CI/CD platform (e.g., GitHub Actions).
+    - [ ] Create a pipeline that triggers on `git push`.
+- [ ] **7.2: Pipeline Stages:**
+    - [ ] **Lint & Test:** Run static analysis and all unit/integration tests.
+    - [ ] **Build:** Compile Go binaries and build Docker images for all services.
+    - [ ] **Push:** Tag and push Docker images to a container registry.
+    - [ ] **Deploy:** (Optional) Add a stage for automated deployment to a staging environment.
