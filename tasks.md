@@ -1,50 +1,80 @@
 # Implementation Tasks
 
-This document breaks down the development work for the Golang Auth Server based on the `design.md`. The tasks are ordered to build the system from the ground up.
+This document breaks down the development work for the Golang Auth Server. Tasks are grouped by epic and ordered for logical implementation.
 
-## Phase 1: Core Project Setup & Boilerplate
+## Epic 1: Project Foundation & Core Services
 
--   [ ] 1.1: Initialize Go module (`go mod init`) and create initial project structure (`/cmd`, `/internal`, `/pkg`, `/api`).
--   [ ] 1.2: Set up basic Gin web server in `cmd/server/main.go`.
--   [ ] 1.3: Create a `Dockerfile` for the Go application.
--   [ ] 1.4: Create initial Kubernetes manifests (`Deployment`, `Service`) for the auth server.
--   [ ] 1.5: Set up `docker-compose.yml` for easy local development with PostgreSQL and Redis.
+- [ ] **1.1: Project Setup:**
+    - [ ] Initialize Go module (`go mod init`).
+    - [ ] Create project structure (`/cmd`, `/internal`, `/pkg`, `/api`).
+    - [ ] Add initial `Dockerfile`.
+- [ ] **1.2: Configuration Management:**
+    - [ ] Implement configuration loading from environment variables and a config file (e.g., using Viper).
+- [ ] **1.3: Local Development Environment:**
+    - [ ] Create `docker-compose.yml` for PostgreSQL and Redis.
+- [ ] **1.4: Logging & Observability:**
+    - [ ] Set up structured logging (e.g., using Logrus or Zap).
+    - [ ] Create a basic `/healthz` health check endpoint.
 
-## Phase 2: OIDC/OAuth 2.1 Core Implementation
+## Epic 2: Database & Data Models
 
--   [ ] 2.1: Implement RS256 key generation and storage.
--   [ ] 2.2: Create the `/.well-known/jwks.json` endpoint.
--   [ ] 2.3: Implement the automatic key rotation logic.
--   [ ] 2.4: Define data models for users and clients in PostgreSQL. Use `gorm` and run initial migrations.
--   [ ] 2.5: Implement the `/authorize` endpoint, including PKCE challenge storage.
--   [ ] 2.6: Implement the `/token` endpoint, including PKCE verification and issuance of ID, Access, and Refresh tokens.
--   [ ] 2.7: Implement the `/userinfo` endpoint.
--   [ ] 2.8: Implement refresh token flow (exchanging a refresh token for new tokens).
+- [ ] **2.1: Schema Design & Migration:**
+    - [ ] Set up a migration tool (e.g., `golang-migrate`).
+    - [ ] Create the initial SQL migration for `users`, `oauth_clients`, and `signing_keys` tables.
+- [ ] **2.2: Data Models:**
+    - [ ] Define GORM models for all database tables.
+- [ ] **2.3: Database Connectivity:**
+    - [ ] Implement a database connection package in `/internal/database`.
 
-## Phase 3: User Authentication & UI
+## Epic 3: OIDC/OAuth 2.1 Core Implementation
 
--   [ ] 3.1: Create basic HTML templates for the login, consent, and error pages.
--   [ ] 3.2: Implement local user registration (email/password).
--   [ ] 3.3: Implement local user login flow, integrating with the OIDC core.
--   [ ] 3.4: Implement password hashing with Argon2.
--   [ ] 3.5: Implement SSO session management using Redis and secure cookies.
--   [ ] 3.6: Implement Google Social Login flow.
--   [ ] 3.7: Implement LDAP authentication flow for admin users.
+- [ ] **3.1: JWT & Key Management:**
+    - [ ] Implement RS256 key generation and storage in the `signing_keys` table.
+    - [ ] Implement automatic key rotation logic (e.g., a background worker).
+    - [ ] Create the `/.well-known/jwks.json` endpoint.
+- [ ] **3.2: Admin Bootstrap:**
+    - [ ] Implement the one-time admin client bootstrap mechanism on server startup.
+- [ ] **3.3: OAuth Endpoints:**
+    - [ ] Implement the `/authorize` endpoint (with PKCE challenge storage in Redis).
+    - [ ] Implement the `/token` endpoint (with PKCE verification and token issuance).
+    - [ ] Implement the `/userinfo` endpoint.
+    - [ ] Implement the refresh token grant type.
+- [ ] **3.4: Basic UI:**
+    - [ ] Create basic HTML templates for login, consent, and error pages.
 
-## Phase 4: Security & Account Management
+## Epic 4: Authentication Flows
 
--   [ ] 4.1: Implement TOTP 2FA registration for all user types.
--   [ ] 4.2: Enforce mandatory 2FA check for LDAP users after login.
--   [ ] 4.3: Implement optional 2FA check for local/Google users.
--   [ ] 4.4: Implement password reset flow for local users (request token generation, email sending, password update).
+- [ ] **4.1: Local User Authentication:**
+    - [ ] Implement user registration (hashing passwords with Argon2).
+    - [ ] Implement the local login flow and connect it to the OIDC endpoints.
+    - [ ] Implement the password reset flow.
+- [ ] **4.2: SSO & Session Management:**
+    - [ ] Implement SSO session creation in Redis, managed by a secure cookie.
+- [ ] **4.3: External Identity Providers:**
+    - [ ] Implement the Google Social Login flow.
+    - [ ] Implement the LDAP authentication flow.
 
-## Phase 5: Admin Dashboard & Deployment
+## Epic 5: Security Hardening & 2FA
 
--   [ ] 5.1: Create a separate Go project for the Admin Dashboard UI.
--   [ ] 5.2: Implement the login flow for the dashboard, requiring the `admin` group in the ID token.
--   [ ] 5.3: Build basic dashboard features (e.g., view users, view clients).
--   [ ] 5.4: Create Kubernetes manifests for the Admin Dashboard.
--   [ ] 5.5: Set up Nginx Ingress with `cert-manager` for TLS.
--   [ ] 5.6: Configure Nginx Ingress to enforce IP whitelisting for the Admin Dashboard.
--   [ ] 5.7: Write a deployment script/guide for setting up the full stack on Minikube.
--   [ ] 5.8: Test the public deployment and restricted admin access.
+- [ ] **5.1: Two-Factor Authentication (2FA):**
+    - [ ] Implement TOTP secret generation and registration.
+    - [ ] Implement the 2FA verification step in the login flow.
+    - [ ] Enforce mandatory 2FA for LDAP users.
+- [ ] **5.2: Security Measures:**
+    - [ ] Implement rate limiting on authentication endpoints.
+    - [ ] Implement comprehensive error handling and security headers.
+    - [ ] Add basic input validation to all endpoints.
+
+## Epic 6: Admin Dashboard & Deployment
+
+- [ ] **6.1: Admin Dashboard Application:**
+    - [ ] Set up a new Go project for the Admin Dashboard UI.
+    - [ ] Implement the OIDC login flow for the dashboard, requiring the `admin` group.
+    - [ ] Build UI features for managing users and OAuth clients.
+- [ ] **6.2: Kubernetes Deployment:**
+    - [ ] Create Kubernetes manifests for the auth server and admin dashboard.
+    - [ ] Set up Nginx Ingress with `cert-manager` for automatic TLS.
+    - [ ] Configure Kubernetes secrets for all sensitive configuration.
+- [ ] **6.3: Testing:**
+    - [ ] Write unit tests for critical logic (e.g., token generation, password hashing).
+    - [ ] Write integration tests for the main OIDC flows.

@@ -17,66 +17,56 @@ The system will run within a Kubernetes cluster and consists of several key comp
 *   **Go Auth Server:** The core IdP. It handles all authentication logic, token issuance, and user session management. It exposes OIDC/OAuth2 endpoints but serves no UI other than login/consent pages.
 *   **Admin Dashboard:** A separate microservice (and OAuth 2.1 client) that provides the UI for managing the auth server (e.g., users, clients, settings). Access is restricted to users in the "admin" group.
 *   **Other Microservices (Blog, Chat):** Future client applications that will rely on the Go Auth Server for user authentication.
-*   **Nginx Ingress:** Manages TLS termination, routing, and IP-based access control.
-*   **Redis:** High-performance cache for sessions and opaque tokens.
+*   **Nginx Ingress:** Manages TLS termination and routing.
+*   **Redis:** High-performance cache for sessions, opaque tokens, and temporary authorization codes.
 *   **PostgreSQL:** Persistent database for local user accounts and client configurations.
 
-```
-+-----------------------------------------------------------------+
-| End User's Browser                                              |
-+-----------------------------------------------------------------+
-      | (HTTPS/TLS via Cloudflare)
-      v
-+-----------------------------------------------------------------+
-| Kubernetes Cluster                                              |
-|                                                                 |
-|  +-----------------------+                                      |
-|  | Nginx Ingress         | (Manages TLS/routing, IP whitelisting)|
-|  +-----------------------+                                      |
-|      | (Public)        | (Admin Dashboard - Whitelisted IPs)    |
-|      v                 v                                        |
-|  +-----------------+  +----------------------+                  |
-|  | Go Auth Server  |  | Admin Dashboard UI   |                  |
-|  | (IdP Core)      |  | (OAuth Client)       |                  |
-|  +-----------------+  +----------------------+                  |
-|      ^      |      |      ^                                     |
-|      |      |      |      | (API Calls)                         |
-|      v      v      v      v                                     |
-|  +--------+ +--------+ +------------------+                      |
-|  | Redis  | |  DB    | | External IDPs    |                      |
-|  | (Cache)| |(Users) | | (Google, LDAP)   |                      |
-|  +--------+ +--------+ +------------------+                      |
-+-----------------------------------------------------------------+
-```
+## 3. Admin Bootstrap Mechanism
 
-## 3. User Roles and Authentication Flows
+To solve the "chicken-and-egg" problem of the first admin, the server will have a one-time bootstrap mechanism.
 
-### 3.1. Normal Users (Local DB or Google)
-*   **Authentication:** Users register and sign in via the Auth Server's UI using an email/password (stored in PostgreSQL) or Google's OAuth2 flow.
-*   **2FA:** Users can optionally enable Time-based One-Time Password (TOTP) 2FA.
-*   **Account Management:** Users can reset forgotten passwords via an email link.
+*   **On first startup, the server will check if any OAuth clients exist in the database.**
+*   If the database is empty, it will read environment variables (e.g., `INITIAL_ADMIN_CLIENT_ID`, `INITIAL_ADMIN_CLIENT_SECRET`) to create the first client for the Admin Dashboard.
+*   This allows the first administrator to log in via LDAP and use the dashboard to configure the rest of the system. This startup logic will not run again once clients are present in the database.
 
-### 3.2. Administrators (LDAP)
-*   **Authentication:** Admins authenticate via the Auth Server's UI using their LDAP credentials.
-*   **2FA:** Mandatory TOTP 2FA is required after successful LDAP authentication.
-*   **Access:** Gain access to the separate Admin Dashboard service.
+## 4. Database Schema
 
-## 4. Token and Session Strategy
+The PostgreSQL database will contain the following core tables. Migrations will be managed with a library like `golang-migrate`.
+
+*   **`users`**: Stores local user accounts.
+    *   `id` (UUID, PK)
+    *   `email` (VARCHAR, UNIQUE)
+    *   `password_hash` (VARCHAR) - Nullable, as Google users won't have one.
+    *   `google_id` (VARCHAR, UNIQUE) - Nullable
+    *   `tfa_secret` (VARCHAR) - Encrypted secret for TOTP.
+    *   `created_at`, `updated_at`
+
+*   **`oauth_clients`**: Stores information about applications that can use the auth server.
+    *   `id` (UUID, PK)
+    *   `client_id` (VARCHAR, UNIQUE)
+    *   `client_secret_hash` (VARCHAR)
+    *   `redirect_uris` (TEXT[])
+    *   `scopes` (TEXT[])
+    *   `client_name` (VARCHAR)
+
+*   **`signing_keys`**: Stores the private keys for signing JWTs.
+    *   `id` (`kid`) (VARCHAR, PK)
+    *   `private_key` (TEXT) - Encrypted at rest.
+    *   `created_at`
+
+## 5. Token and Session Strategy
 
 *   **Signing Algorithm:** All JWTs will be signed using **RS256**.
-*   **Automatic Key Rotation:** The server will automatically generate new RS256 key pairs on a configurable schedule.
-    *   **JWKS Endpoint:** The server will expose a `/.well-known/jwks.json` endpoint containing the *public keys* of all currently active and recently retired keys.
-    *   **Key ID (`kid`):** Every token will have a `kid` header to identify which key signed it, allowing clients to select the correct public key for verification from the JWKS endpoint.
-    *   **Graceful Retirement:** Old keys will be kept in the JWKS endpoint for a grace period beyond their token expiry time to ensure all tokens can be verified, enabling zero-downtime key rotation.
-*   **ID Token:** A short-lived JWT containing user identity (`sub`, `iss`, etc.) and group affiliations via a `groups` claim (e.g., `["admin", "user"]`). Intended for the client application.
-*   **Access Token:** A short-lived JWT containing `scope` claims (e.g., `blog:write`, `chat:read`) that define the permissions the client can exercise at a resource server (e.g., the Blog API).
-*   **Refresh Token:** A long-lived, **opaque random string** stored in Redis. It can be revoked instantly on the server side.
-*   **SSO Session:** Managed by a secure, HTTP-only cookie containing an **opaque random string** as the session ID, which is a key in Redis. This enables a seamless SSO experience.
+*   **Automatic Key Rotation:** The server will automatically generate new RS256 key pairs on a configurable schedule and store them in the `signing_keys` table.
+    *   **JWKS Endpoint:** The server will expose a `/.well-known/jwks.json` endpoint.
+    *   **Key ID (`kid`):** Every token will have a `kid` header.
+*   **Authorization Codes:** Short-lived authorization codes will be stored in **Redis** with their associated context (user_id, client_id, pkce_challenge, expiry).
+*   **Refresh & SSO Tokens:** Opaque refresh tokens and SSO session tokens will also be stored in **Redis**.
 
-## 5. Security and Deployment
+## 6. Security and Deployment
 
 *   **TLS:** End-to-end encryption via Cloudflare and Let's Encrypt (`cert-manager`).
-*   **Admin Protection:** Admin Dashboard access is restricted by IP whitelist at the Nginx Ingress.
+*   **Primary Admin Security:** Access to the Admin Dashboard is primarily secured by requiring authentication from an LDAP source and mandatory 2FA.
 *   **PKCE:** Mandatory for all OAuth 2.1 clients.
 *   **Password Hashing:** **Argon2** for local user passwords.
 *   **Secrets Management:** Kubernetes Secrets for all credentials.
