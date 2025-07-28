@@ -1,0 +1,43 @@
+server:
+  host: "0.0.0.0"
+  port: 8080
+  environment: "development"
+  read_timeout: "30s"
+  write_timeout: "30s"
+
+database:
+  host: "localhost"
+  port: 5432
+  name: "auth_db"
+  user: "postgres"
+  password: "postgres"
+  ssl_mode: "disable"
+
+redis:
+  host: "localhost"
+  port: 6379
+  password: "redis123"
+  db: 0
+
+auth:
+  jwt_issuer: "auth-server-dev"
+  jwt_audience: "auth-clients-dev"
+  access_token_expiry: "15m"
+  refresh_token_expiry: "720h"
+  auth_code_expiry: "10m"
+  session_expiry: "24h"
+  master_encryption_key: "dev-key-32-bytes-change-in-prod!!"
+
+security:
+  rate_limit_requests: 1000
+  rate_limit_window: "1h"
+  password_min_length: 8
+  max_login_attempts: 10
+  lockout_duration: "5m"
+
+google:
+  redirect_url: "http://localhost:8080/auth/google/callback"
+  scopes:
+    - "openid"
+    - "profile"
+    - "email"

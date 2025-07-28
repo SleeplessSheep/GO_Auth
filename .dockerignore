@@ -1,0 +1,49 @@
+# Git
+.git
+.gitignore
+
+# Documentation (private specs)
+requirements.md
+design.md
+tasks.md
+CLAUDE.md
+README.md
+docs/
+
+# Development files
+.env*
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+
+# Go build artifacts
+server
+*.exe
+*.test
+*.out
+bin/
+dist/
+build/
+
+# Development dependencies
+deployments/
+scripts/
+migrations/
+
+# Test files
+*_test.go
+testdata/
+
+# Temporary files
+tmp/
+temp/

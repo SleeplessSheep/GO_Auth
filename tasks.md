@@ -1,20 +1,29 @@
 # Implementation Tasks
 
-This document breaks down the development work for the Golang Auth Server. Tasks are grouped by epic and ordered for logical implementation.
+This document breaks down the development work for the Golang Auth Server. This project serves as both a security learning exercise and DevOps showcase, with containerization and CI/CD integrated from the start.
 
-## Epic 1: Project Foundation & Core Services
+## Epic 1: Project Foundation & DevOps Setup
 
 - [ ] **1.1: Project Setup:**
     - [ ] Initialize Go module (`go mod init`).
     - [ ] Create project structure (`/cmd`, `/internal`, `/pkg`, `/api`).
-    - [ ] Add initial `Dockerfile`.
+    - [ ] Add initial `Dockerfile` with multi-stage build.
+    - [ ] Create `.dockerignore` and security-focused `.gitignore`.
 - [ ] **1.2: Configuration Management:**
     - [ ] Implement configuration loading from environment variables and a config file (e.g., using Viper).
+    - [ ] Add configuration validation and security defaults.
 - [ ] **1.3: Local Development Environment:**
     - [ ] Create `docker-compose.yml` for PostgreSQL and Redis.
-- [ ] **1.4: Logging & Observability:**
+    - [ ] Add development vs production environment configurations.
+    - [ ] Include volume mounts for local development.
+- [ ] **1.4: CI/CD Foundation:**
+    - [ ] Set up GitHub Actions workflow for basic linting and testing.
+    - [ ] Configure Docker image building and security scanning.
+    - [ ] Add automated dependency vulnerability checks.
+- [ ] **1.5: Logging & Observability:**
     - [ ] Set up structured logging (e.g., using Logrus or Zap).
-    - [ ] Create a basic `/healthz` health check endpoint.
+    - [ ] Create comprehensive `/healthz` health check endpoint.
+    - [ ] Add basic metrics endpoint (`/metrics` for Prometheus).
 
 ## Epic 2: Database & Data Models
 
@@ -66,27 +75,49 @@ This document breaks down the development work for the Golang Auth Server. Tasks
     - [ ] Implement comprehensive error handling and security headers.
     - [ ] Add basic input validation to all endpoints.
 
-## Epic 6: Admin Dashboard & Deployment
+## Epic 6: Admin Dashboard & Local Minikube Deployment
 
 - [ ] **6.1: Admin Dashboard Application:**
     - [ ] Set up a new Go project for the Admin Dashboard UI.
     - [ ] Implement the OIDC login flow for the dashboard, requiring the `admin` group.
     - [ ] Build UI features for managing users and OAuth clients.
-- [ ] **6.2: Kubernetes Deployment:**
+- [ ] **6.2: Minikube Deployment (Local):**
     - [ ] Create Kubernetes manifests for the auth server and admin dashboard.
-    - [ ] Set up Nginx Ingress with `cert-manager` for automatic TLS.
+    - [ ] Set up Nginx Ingress for local routing.
     - [ ] Configure Kubernetes secrets for all sensitive configuration.
-- [ ] **6.3: Testing:**
+    - [ ] Document local deployment and testing procedures.
+- [ ] **6.3: Security Testing:**
     - [ ] Write unit tests for critical logic (e.g., token generation, password hashing).
     - [ ] Write integration tests for the main OIDC flows.
+    - [ ] Set up automated security scanning (SAST/DAST tools).
+    - [ ] Document pen testing procedures with common tools (nmap, burp suite, etc.).
 
-## Epic 7: CI/CD Pipeline (Post-MVP)
+## Epic 7: Cloud Deployment with Domain
 
-- [ ] **7.1: Pipeline Setup:**
-    - [ ] Choose a CI/CD platform (e.g., GitHub Actions).
-    - [ ] Create a pipeline that triggers on `git push`.
-- [ ] **7.2: Pipeline Stages:**
-    - [ ] **Lint & Test:** Run static analysis and all unit/integration tests.
-    - [ ] **Build:** Compile Go binaries and build Docker images for all services.
-    - [ ] **Push:** Tag and push Docker images to a container registry.
-    - [ ] **Deploy:** (Optional) Add a stage for automated deployment to a staging environment.
+- [ ] **7.1: Cloud Infrastructure:**
+    - [ ] Set up cloud Kubernetes cluster (GKE/EKS/AKS).
+    - [ ] Configure Cloudflare DNS integration.
+    - [ ] Set up cert-manager for automatic TLS with Let's Encrypt.
+- [ ] **7.2: CI/CD Pipeline Enhancement:**
+    - [ ] Extend GitHub Actions for cloud deployment.
+    - [ ] Add staging and production environment separation.
+    - [ ] Configure automated rollbacks and health checks.
+- [ ] **7.3: Production Monitoring:**
+    - [ ] Set up Prometheus and Grafana for monitoring.
+    - [ ] Configure logging aggregation and alerting.
+    - [ ] Add performance and security monitoring dashboards.
+
+## Epic 8: AWS Migration & Advanced DevOps
+
+- [ ] **8.1: AWS Infrastructure:**
+    - [ ] Migrate to EKS with Terraform/CDK for Infrastructure as Code.
+    - [ ] Set up AWS-native services (RDS, ElastiCache, Secrets Manager).
+    - [ ] Configure VPC, security groups, and network policies.
+- [ ] **8.2: Advanced Security & Compliance:**
+    - [ ] Implement AWS security best practices (IAM roles, KMS).
+    - [ ] Add compliance scanning and reporting.
+    - [ ] Set up disaster recovery and backup procedures.
+- [ ] **8.3: Cost Optimization & Scaling:**
+    - [ ] Configure auto-scaling and resource optimization.
+    - [ ] Implement cost monitoring and budgeting.
+    - [ ] Document scaling strategies and cost analysis.

@@ -73,4 +73,28 @@ The PostgreSQL database will contain the following core tables. Migrations will 
 *   **PKCE:** Mandatory for all OAuth 2.1 clients.
 *   **Password Hashing:** **Argon2** for local user passwords.
 *   **Secrets Management:** All other credentials (database passwords, Google client secrets) will also be stored as Kubernetes Secrets.
-*   **Deployment:** The entire stack will be defined in Kubernetes manifests for deployment to Minikube (local) or a public cloud provider.
+
+## 7. Deployment Architecture & DevOps Pipeline
+
+**Three-Stage Deployment Strategy:**
+1. **Local Development**: Minikube with local DNS and self-signed certificates
+2. **Cloud Production**: Managed Kubernetes (GKE/EKS/AKS) with Cloudflare domain and Let's Encrypt TLS
+3. **AWS Enterprise**: Full AWS-native deployment with EKS, RDS, ElastiCache, and comprehensive monitoring
+
+**Infrastructure as Code:**
+*   Kubernetes manifests for all environments
+*   Terraform modules for AWS infrastructure
+*   Helm charts for application deployment
+*   Environment-specific configuration management
+
+**CI/CD Pipeline (GitHub Actions):**
+*   Automated testing (unit, integration, security)
+*   Docker image building with security scanning
+*   Multi-environment deployment with approval gates
+*   Automated rollback capabilities
+
+**Security & Monitoring:**
+*   Automated SAST/DAST scanning in pipeline
+*   Prometheus metrics and Grafana dashboards
+*   Centralized logging with security event correlation
+*   Regular penetration testing procedures documented

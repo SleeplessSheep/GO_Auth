@@ -1,0 +1,57 @@
+server:
+  host: "0.0.0.0"
+  port: 8080
+  environment: "development"
+  read_timeout: "10s"
+  write_timeout: "10s"
+
+database:
+  host: "localhost"
+  port: 5432
+  name: "auth_db"
+  user: "postgres"
+  password: "postgres"
+  ssl_mode: "disable"
+
+redis:
+  host: "localhost"
+  port: 6379
+  password: ""
+  db: 0
+
+auth:
+  jwt_issuer: "auth-server"
+  jwt_audience: "auth-clients"
+  access_token_expiry: "15m"
+  refresh_token_expiry: "720h"
+  auth_code_expiry: "10m"
+  session_expiry: "24h"
+  # Set this via environment variable: AUTH_AUTH_MASTER_ENCRYPTION_KEY
+  # master_encryption_key: "your-32-byte-key-here"
+
+security:
+  rate_limit_requests: 100
+  rate_limit_window: "1h"
+  password_min_length: 8
+  max_login_attempts: 5
+  lockout_duration: "30m"
+
+ldap:
+  host: "ldap.example.com"
+  port: 389
+  base_dn: "dc=example,dc=com"
+  bind_dn: "cn=admin,dc=example,dc=com"
+  # Set this via environment variable: AUTH_LDAP_BIND_PASSWORD
+  # bind_password: "your-ldap-password"
+  user_filter: "(uid=%s)"
+  admin_group: "admin"
+
+google:
+  # Set these via environment variables:
+  # AUTH_GOOGLE_CLIENT_ID
+  # AUTH_GOOGLE_CLIENT_SECRET
+  redirect_url: "http://localhost:8080/auth/google/callback"
+  scopes:
+    - "openid"
+    - "profile"
+    - "email"

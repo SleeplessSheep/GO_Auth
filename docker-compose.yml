@@ -1,0 +1,129 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: auth-postgres
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - auth-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: auth-redis
+    command: redis-server --appendonly yes --requirepass redis123
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - auth-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  # Auth Server
+  auth-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: auth-server
+    environment:
+      # Server config
+      AUTH_SERVER_ENVIRONMENT: development
+      AUTH_SERVER_HOST: 0.0.0.0
+      AUTH_SERVER_PORT: 8080
+      
+      # Database config
+      AUTH_DATABASE_HOST: postgres
+      AUTH_DATABASE_PORT: 5432
+      AUTH_DATABASE_NAME: auth_db
+      AUTH_DATABASE_USER: postgres
+      AUTH_DATABASE_PASSWORD: postgres
+      
+      # Redis config
+      AUTH_REDIS_HOST: redis
+      AUTH_REDIS_PORT: 6379
+      AUTH_REDIS_PASSWORD: redis123
+      
+      # Auth config
+      AUTH_AUTH_JWT_ISSUER: auth-server-dev
+      AUTH_AUTH_MASTER_ENCRYPTION_KEY: dev-key-32-bytes-change-in-prod!!
+      
+      # Security config (relaxed for development)
+      AUTH_SECURITY_RATE_LIMIT_REQUESTS: 1000
+      AUTH_SECURITY_MAX_LOGIN_ATTEMPTS: 10
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - auth-network
+    volumes:
+      - ./configs:/app/configs:ro
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Adminer for database management (development only)
+  adminer:
+    image: adminer:4.8.1
+    container_name: auth-adminer
+    ports:
+      - "8081:8080"
+    networks:
+      - auth-network
+    profiles:
+      - dev
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DESIGN: lucas
+
+  # Redis Commander for Redis management (development only)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: auth-redis-commander
+    environment:
+      REDIS_HOSTS: local:redis:6379:0:redis123
+    ports:
+      - "8082:8081"
+    networks:
+      - auth-network
+    profiles:
+      - dev
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  auth-network:
+    driver: bridge

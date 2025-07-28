@@ -1,11 +1,12 @@
 # Requirements
 
-This document outlines the requirements for the Golang standalone Identity Provider (IdP).
+This document outlines the requirements for the Golang standalone Identity Provider (IdP). This project serves as both a comprehensive security learning exercise and a DevOps portfolio showcase demonstrating cloud-native deployment patterns.
 
 ## 1. High-Level Goals
 - The system will act as a central, standalone OIDC-compliant Identity Provider.
 - It will provide Single Sign-On (SSO) for a suite of related microservices (e.g., Admin Dashboard, Blog, Chat).
 - It will enforce a strict separation between administrator and normal user roles.
+- It will provide an intuitive user experience similar to Google's login flow.
 
 ## 2. User Stories
 
@@ -15,6 +16,7 @@ This document outlines the requirements for the Golang standalone Identity Provi
 *   **As a user, I want to log in using my Google account for convenience.**
 *   **As a user, I want to enable Time-based One-Time Password (TOTP) 2-Factor Authentication (2FA) on my account to enhance its security.**
 *   **As a user, I want to reset my password if I forget it, so I can regain access.**
+*   **As a user, I want to see my active sessions on the login page and choose to continue with an existing session or login with a different account.**
 
 ### 2.2. Administrator Authentication
 *   **As an administrator, I want to log in using my corporate LDAP credentials to manage the system.**
@@ -44,3 +46,27 @@ This document outlines the requirements for the Golang standalone Identity Provi
     *   The system must provide a secure password reset mechanism.
 *   **Administration:**
     *   An Admin Dashboard application must be provided for system management, and it must be treated as a separate OAuth client.
+*   **User Experience:**
+    *   The login page must display active user sessions.
+    *   Users must be able to continue with an existing valid session or login with a different account.
+*   **Deployment:**
+    *   The system must be deployable on Minikube for local development and demonstration.
+    *   The system should be designed to support cloud deployment in future iterations.
+*   **Logging:**
+    *   The system must log authentication events (success/failure).
+    *   The system must log key operations (user registration, password reset).
+    *   The system must log system events (startup, key rotation).
+    *   The system must log errors and warnings with structured logging.
+*   **Backup and Recovery:**
+    *   The system must document PostgreSQL backup procedures.
+    *   The system must document key rotation and recovery procedures.
+    *   The system must document basic disaster recovery steps.
+*   **DevOps & Deployment Pipeline:**
+    *   The system must support three deployment stages: Local Minikube → Cloud with Domain → AWS
+    *   The system must include automated CI/CD pipeline using GitHub Actions
+    *   The system must include Infrastructure as Code (Terraform/Helm) for AWS deployment
+    *   The system must include monitoring and observability (Prometheus/Grafana)
+*   **Security Testing:**
+    *   The system must include automated security scanning (SAST/DAST)
+    *   The system must be designed to support penetration testing with common security tools
+    *   The system must include comprehensive security documentation and threat modeling
