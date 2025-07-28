@@ -20,3 +20,45 @@ go.work.sum
 
 # Environment variables
 .env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Project specification documents (keep private)
+requirements.md
+design.md
+tasks.md
+CLAUDE.md
+
+# Logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Build artifacts
+bin/
+dist/
+build/
+
+# Kubernetes secrets
+*.key
+*.crt
+secrets/
