@@ -18,10 +18,24 @@
 go.work
 go.work.sum
 
-# Environment variables
+# Environment variables (runtime - never commit)
 .env
 .env.local
 .env.*.local
+.env.production
+.env.staging
+
+# Docker Compose overrides (auto-generated - never commit)
+docker-compose.override.yml
+
+# Kubernetes secrets (runtime - never commit)  
+secrets.yaml
+*-secrets.yaml
+
+# Note: Template files are safe to commit:
+# .env.template - documentation template
+# .env.docker - safe development values
+# secrets.template.yaml - K8s structure template
 
 # IDE
 .vscode/

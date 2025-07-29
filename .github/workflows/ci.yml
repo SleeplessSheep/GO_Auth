@@ -53,6 +53,12 @@ jobs:
   security:
     name: Security Scan
     runs-on: ubuntu-latest
+    # Example of using GitHub Secrets in environment variables
+    env:
+      # These secrets would be configured in GitHub repo settings
+      # Settings → Secrets and variables → Actions → New repository secret
+      TEST_MASTER_KEY: ${{ secrets.TEST_MASTER_ENCRYPTION_KEY }}
+      TEST_DB_PASSWORD: ${{ secrets.TEST_DATABASE_PASSWORD }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -61,6 +67,14 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: '1.24.5'
+
+      - name: Run tests with secrets (if needed)
+        run: |
+          # Example: Tests that need environment variables can use GitHub Secrets
+          # export AUTH_AUTH_MASTER_ENCRYPTION_KEY="${TEST_MASTER_KEY}"
+          # export AUTH_DATABASE_PASSWORD="${TEST_DB_PASSWORD}"
+          # go test ./internal/config -v
+          echo "Security scanning with proper secret management..."
 
       - name: Run Gosec Security Scanner
         uses: securecodewarrior/github-action-gosec@master
@@ -80,6 +94,14 @@ jobs:
     permissions:
       contents: read
       packages: write
+    # Example: Environment variables for deployment (if needed)
+    env:
+      # For custom container registries or deployment credentials
+      # DOCKER_REGISTRY_PASSWORD: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+      # AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      # AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      # KUBE_CONFIG: ${{ secrets.KUBE_CONFIG_BASE64 }}
+      DUMMY_VAR: "template-example"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
