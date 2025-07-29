@@ -54,9 +54,30 @@ func main() {
 	defer db.Close()
 
 	// Run database migrations
-	if err := db.AutoMigrate(); err != nil {
+	migrationManager, err := database.NewMigrationManager(db)
+	if err != nil {
+		appLogger.WithError(err).Fatal("Failed to create migration manager")
+	}
+	defer migrationManager.Close()
+
+	// Get current migration status
+	migrationInfo, err := migrationManager.GetMigrationInfo()
+	if err != nil {
+		appLogger.WithError(err).Fatal("Failed to get migration info")
+	}
+
+	appLogger.WithFields(map[string]interface{}{
+		"current_version": migrationInfo.CurrentVersion,
+		"is_dirty":        migrationInfo.IsDirty,
+		"has_migrations":  migrationInfo.HasMigrations,
+	}).Info("Database migration status")
+
+	// Run pending migrations
+	if err := migrationManager.Up(); err != nil {
 		appLogger.WithError(err).Fatal("Failed to run database migrations")
 	}
+
+	appLogger.Info("Database migrations completed successfully")
 
 	// Create Gin router
 	r := gin.New()

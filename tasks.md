@@ -25,32 +25,68 @@ This document breaks down the development work for the Golang Auth Server. This 
     - [ ] Create comprehensive `/healthz` health check endpoint.
     - [ ] Add basic metrics endpoint (`/metrics` for Prometheus).
 
-## Epic 2: Database & Data Models
+## Epic 2: Database & Data Models ✅ COMPLETE
 
-- [ ] **2.1: Schema Design & Migration:**
-    - [ ] Set up a migration tool (e.g., `golang-migrate`).
-    - [ ] Create the initial SQL migration for `users`, `oauth_clients`, and `signing_keys` tables.
-- [ ] **2.2: Data Models:**
-    - [ ] Define GORM models for all database tables.
-- [ ] **2.3: Database Connectivity:**
-    - [ ] Implement a database connection package in `/internal/database`.
+- [x] **2.1: Schema Design & Migration:**
+    - [x] Set up golang-migrate for professional database migrations.
+    - [x] Create comprehensive initial SQL migration for all auth tables (users, oauth_clients, signing_keys, auth_codes, refresh_tokens, auth_sessions, login_attempts, password_reset_tokens, audit_log).
+    - [x] Implement migration management system with version tracking.
+    - [x] Docker integration with proper database lifecycle management.
+- [x] **2.2: Enhanced GORM Models:**
+    - [x] Define GORM models for all 9 database tables with proper relationships.
+    - [x] Add custom StringArray type for PostgreSQL array handling.
+    - [x] Implement proper foreign key constraints and cascading deletes.
+    - [x] Add comprehensive model validation and table naming.
+    - [x] Create extensive model unit tests with 100% coverage.
+- [x] **2.3: Repository Pattern Implementation:**
+    - [x] Create comprehensive repository interfaces for all entities.
+    - [x] Implement PostgreSQL-based repository with full CRUD operations.
+    - [x] Add advanced error handling with PostgreSQL-specific error mapping.
+    - [x] Implement transaction support with commit/rollback capabilities.
+    - [x] Create repository manager with dependency injection.
+    - [x] Add integration tests for repository operations.
+    - [x] Provide usage examples demonstrating all patterns.
 
-## Epic 3: OIDC/OAuth 2.1 Core Implementation
+## Epic 3: OIDC/OAuth 2.1 Core Implementation 🚧 NEXT
 
-- [ ] **3.1: JWT & Key Management:**
-    - [ ] Implement RS256 key generation and storage in the `signing_keys` table, ensuring they are encrypted at rest.
-    - [ ] Implement the master encryption key retrieval from a Kubernetes Secret.
-    - [ ] Create a Kubernetes CronJob manifest that calls an internal API endpoint to trigger key rotation.
-    - [ ] Create the `/.well-known/jwks.json` endpoint.
-- [ ] **3.2: Admin Bootstrap:**
-    - [ ] Implement the one-time admin client bootstrap mechanism on server startup.
-- [ ] **3.3: OAuth Endpoints:**
-    - [ ] Implement the `/authorize` endpoint (with PKCE challenge storage in Redis).
-    - [ ] Implement the `/token` endpoint (with PKCE verification and token issuance).
-    - [ ] Implement the `/userinfo` endpoint.
-    - [ ] Implement the refresh token grant type.
-- [ ] **3.4: Basic UI:**
-    - [ ] Create basic HTML templates for login, consent, and error pages.
+**Token Strategy Defined**: 
+- Access tokens: OAuth 2.1 compliant with standard claims (iss, aud, scope, client_id, etc.)
+- ID tokens: OIDC compliant with full profile claims (email, name, picture, auth_time, etc.)
+- Admin tokens: Enhanced validation with LDAP real-time verification and short expiry
+- Both user types use same token structure with different claims and validation
+
+- [ ] **3.1: JWT Service & Key Management:**
+    - [ ] Implement RS256 JWT signing and verification service
+    - [ ] Create signing key management with rotation support
+    - [ ] Implement access token and ID token generation with proper claims
+    - [ ] Add JWT validation middleware with context propagation
+    - [ ] Implement master encryption key handling for private key storage
+    - [ ] Create JWKS endpoint for public key distribution
+- [ ] **3.2: Authentication Services:**
+    - [ ] Implement password authentication with Argon2 hashing
+    - [ ] Create Google OAuth integration with proper claim mapping  
+    - [ ] Implement LDAP authentication for administrators
+    - [ ] Add authentication method tracking (amr) and context (acr)
+- [ ] **3.3: OIDC Protocol Endpoints:**
+    - [ ] Create OIDC discovery endpoint (/.well-known/openid_configuration)
+    - [ ] Implement authorization endpoint (/auth) with PKCE support
+    - [ ] Create token endpoint (/token) with proper grant type handling
+    - [ ] Implement userinfo endpoint (/userinfo) with scope-based claims
+    - [ ] Add proper error responses per OIDC specification
+- [ ] **3.4: Session Management:**
+    - [ ] Implement Redis-backed SSO session management
+    - [ ] Create session creation, validation, and cleanup services
+    - [ ] Add admin session monitoring and anomaly detection
+    - [ ] Implement session revocation and logout functionality
+- [ ] **3.5: Advanced Security Features:**
+    - [ ] Implement admin token real-time LDAP validation
+    - [ ] Add login attempt tracking and rate limiting
+    - [ ] Create audit logging for all authentication events
+    - [ ] Implement 2FA/TOTP support for enhanced security
+- [ ] **3.6: Admin Bootstrap & UI:**
+    - [ ] Implement one-time admin client bootstrap mechanism on server startup
+    - [ ] Create basic HTML templates for login, consent, and error pages
+    - [ ] Add admin dashboard client configuration
 
 ## Epic 4: Authentication Flows
 
