@@ -12,9 +12,11 @@ import (
 
 	"auth/internal/config"
 	"auth/internal/database"
+	"auth/internal/middleware"
 	"auth/pkg/logger"
 
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	gormlogger "gorm.io/gorm/logger"
 )
 
@@ -62,6 +64,7 @@ func main() {
 	// Add middleware
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
+	r.Use(middleware.PrometheusMiddleware())
 
 	// Health check endpoint
 	r.GET("/healthz", func(c *gin.Context) {
@@ -78,6 +81,9 @@ func main() {
 			"version":     "1.0.0",
 		})
 	})
+
+	// Metrics endpoint for Prometheus
+	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	// Temporary ping endpoint for testing
 	r.GET("/ping", func(c *gin.Context) {

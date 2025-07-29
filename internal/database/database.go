@@ -22,6 +22,7 @@ func New(cfg *config.DatabaseConfig, logLevel logger.LogLevel) (*DB, error) {
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.Name, cfg.SSLMode,
 	)
+	
 
 	gormConfig := &gorm.Config{
 		Logger: logger.Default.LogMode(logLevel),

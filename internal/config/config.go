@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/spf13/viper"
@@ -91,8 +92,9 @@ func Load() (*Config, error) {
 	viper.AddConfigPath("./configs")
 	viper.AddConfigPath(".")
 	
-	// Set environment variable prefix
+	// Set environment variable prefix and configure replacer
 	viper.SetEnvPrefix("AUTH")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 
 	// Set defaults
@@ -126,12 +128,18 @@ func setDefaults() {
 	viper.SetDefault("server.environment", "development")
 	viper.SetDefault("database.host", "localhost")
 	viper.SetDefault("database.port", 5432)
+	viper.SetDefault("database.name", "auth_db")
+	viper.SetDefault("database.user", "postgres")
+	viper.SetDefault("database.password", "postgres")
 	viper.SetDefault("database.ssl_mode", "disable")
 	viper.SetDefault("redis.host", "localhost")
 	viper.SetDefault("redis.port", 6379)
+	viper.SetDefault("redis.password", "")
 	viper.SetDefault("auth.jwt_issuer", "auth-server")
+	viper.SetDefault("auth.jwt_audience", "auth-clients")
 	viper.SetDefault("auth.access_token_expiry", "15m")
 	viper.SetDefault("auth.refresh_token_expiry", "720h")
+	viper.SetDefault("auth.master_encryption_key", "")
 }
 
 func validate(config *Config) error {
