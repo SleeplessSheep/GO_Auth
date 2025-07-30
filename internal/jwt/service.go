@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -106,7 +107,7 @@ func (s *Service) GenerateTokenPair(user *models.User, client *models.OAuthClien
 	}
 	
 	// Get active signing key
-	signingKey, err := s.repo.Repository().SigningKey.GetActive(nil)
+	signingKey, err := s.repo.Repository().SigningKey.GetActive(context.TODO())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get signing key: %w", err)
 	}
@@ -240,7 +241,7 @@ func (s *Service) getKeyFunc() jwt.Keyfunc {
 		}
 		
 		// Get signing key
-		signingKey, err := s.repo.Repository().SigningKey.GetByID(nil, keyID)
+		signingKey, err := s.repo.Repository().SigningKey.GetByID(context.TODO(), keyID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get signing key: %w", err)
 		}

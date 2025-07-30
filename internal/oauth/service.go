@@ -28,10 +28,10 @@ type Config struct {
 
 // NewService creates a new OAuth service
 func NewService(repo repository.Manager, jwtService *jwt.Service, config *Config) *Service {
-	if config.RequirePKCE == false {
+	if !config.RequirePKCE {
 		config.RequirePKCE = true // Force PKCE for OAuth 2.1 compliance
 	}
-	if config.RequireState == false {
+	if !config.RequireState {
 		config.RequireState = true // Force state for CSRF protection
 	}
 	
