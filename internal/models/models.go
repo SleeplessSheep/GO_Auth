@@ -118,6 +118,11 @@ type AuthSession struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+// IsExpired checks if the session has expired
+func (s *AuthSession) IsExpired() bool {
+	return time.Now().After(s.ExpiresAt)
+}
+
 // AuthCode represents an OAuth authorization code
 type AuthCode struct {
 	ID            uuid.UUID   `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`

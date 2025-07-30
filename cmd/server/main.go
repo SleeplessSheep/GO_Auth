@@ -12,7 +12,11 @@ import (
 
 	"auth/internal/config"
 	"auth/internal/database"
+	"auth/internal/jwt"
 	"auth/internal/middleware"
+	"auth/internal/oauth"
+	"auth/internal/repository/postgres"
+	"auth/internal/routes"
 	"auth/pkg/logger"
 
 	"github.com/gin-gonic/gin"
@@ -79,16 +83,43 @@ func main() {
 
 	appLogger.Info("Database migrations completed successfully")
 
+	// Initialize repository
+	repo := postgres.NewManager(db)
+
+	// Initialize JWT service
+	jwtConfig := &jwt.Config{
+		Issuer:                 cfg.Auth.JWTIssuer,
+		AccessTokenExpiry:      cfg.Auth.AccessTokenExpiry,
+		IDTokenExpiry:          cfg.Auth.AccessTokenExpiry, // Use same as access token for now
+		RefreshTokenExpiry:     cfg.Auth.RefreshTokenExpiry,
+		AdminAccessTokenExpiry: 30 * time.Minute, // Shorter for admin tokens
+	}
+	jwtService := jwt.NewService(repo, jwtConfig)
+
+	// Initialize OAuth service
+	oauthConfig := &oauth.Config{
+		AuthCodeExpiry:    15 * time.Minute, // 15 minutes for auth codes
+		DefaultScopes:     []string{"openid", "profile", "email"},
+		RequirePKCE:       true,
+		RequireState:      true,
+		AllowedGrantTypes: []string{"authorization_code", "refresh_token"},
+	}
+	oauthService := oauth.NewService(repo, jwtService, oauthConfig)
+
 	// Create Gin router
 	r := gin.New()
 	
-	// Add middleware
-	r.Use(gin.Logger())
-	r.Use(gin.Recovery())
+	// Add Prometheus middleware
 	r.Use(middleware.PrometheusMiddleware())
 
-	// Health check endpoint
-	r.GET("/healthz", func(c *gin.Context) {
+	// Setup all routes
+	routes.SetupRoutes(r, repo, jwtService, oauthService)
+
+	// Metrics endpoint for Prometheus
+	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
+	// Additional health check for database
+	r.GET("/healthz/db", func(c *gin.Context) {
 		if err := db.Health(); err != nil {
 			c.JSON(http.StatusServiceUnavailable, gin.H{
 				"status": "unhealthy",
@@ -100,16 +131,6 @@ func main() {
 			"status":      "healthy",
 			"environment": cfg.Server.Environment,
 			"version":     "1.0.0",
-		})
-	})
-
-	// Metrics endpoint for Prometheus
-	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
-
-	// Temporary ping endpoint for testing
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "pong",
 		})
 	})
 
