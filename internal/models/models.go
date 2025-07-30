@@ -17,8 +17,19 @@ type User struct {
 	Email        string         `json:"email" gorm:"uniqueIndex;not null;type:varchar(255)"`
 	PasswordHash *string        `json:"-" gorm:"type:varchar(255)"` // Nullable for OAuth-only users
 	GoogleID     *string        `json:"google_id,omitempty" gorm:"uniqueIndex;type:varchar(255)"`
+	
+	// User classification
+	UserType     string         `json:"user_type" gorm:"not null;default:'user';type:varchar(20)"` // 'user' | 'admin'
+	AuthProvider string         `json:"auth_provider" gorm:"not null;default:'local';type:varchar(20)"` // 'local' | 'google' | 'ldap'
+	
+	// LDAP specific (for admin users)
+	LdapDN       *string        `json:"-" gorm:"type:text"` // LDAP Distinguished Name
+	
+	// 2FA and security
 	TFASecret    *string        `json:"-" gorm:"type:text"` // Encrypted TOTP secret
 	TFAEnabled   bool           `json:"tfa_enabled" gorm:"default:false;not null"`
+	
+	// Status and metadata
 	IsActive     bool           `json:"is_active" gorm:"default:true;not null"`
 	LastLoginAt  *time.Time     `json:"last_login_at,omitempty"`
 	CreatedAt    time.Time      `json:"created_at"`
