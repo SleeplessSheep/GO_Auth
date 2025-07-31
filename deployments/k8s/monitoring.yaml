@@ -1,0 +1,135 @@
+# ServiceMonitor for Prometheus scraping
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: auth-server-metrics
+  namespace: auth-system
+  labels:
+    app.kubernetes.io/name: auth-server
+    app.kubernetes.io/component: monitoring
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: auth-server
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+
+---
+# Network Policy for security
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: auth-server-netpol
+  namespace: auth-system
+  labels:
+    app.kubernetes.io/name: auth-server
+    app.kubernetes.io/component: security
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: auth-server
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow ingress from nginx ingress controller
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8080
+  # Allow health checks from kube-system
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: TCP
+      port: 8080
+  egress:
+  # Allow egress to PostgreSQL
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: postgres
+    ports:
+    - protocol: TCP
+      port: 5432
+  # Allow egress to Redis
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: redis
+    ports:
+    - protocol: TCP
+      port: 6379
+  # Allow DNS resolution
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+  # Allow external HTTPS (for Google OAuth, LDAP, etc.)
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 389  # LDAP
+    - protocol: TCP
+      port: 636  # LDAPS
+
+---
+# Pod Disruption Budget for high availability
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: auth-server-pdb
+  namespace: auth-system
+  labels:
+    app.kubernetes.io/name: auth-server
+    app.kubernetes.io/component: availability
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: auth-server
+  minAvailable: 1  # Always keep at least 1 pod running
+
+---
+# RBAC for service account (minimal permissions)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: auth-server-role
+  namespace: auth-system
+  labels:
+    app.kubernetes.io/name: auth-server
+    app.kubernetes.io/component: rbac
+rules:
+# Only allow reading secrets for JWT key rotation
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list"]
+  resourceNames: ["auth-secrets", "jwt-signing-keys"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: auth-server-rolebinding
+  namespace: auth-system
+  labels:
+    app.kubernetes.io/name: auth-server
+    app.kubernetes.io/component: rbac
+subjects:
+- kind: ServiceAccount
+  name: auth-server-sa
+  namespace: auth-system
+roleRef:
+  kind: Role
+  name: auth-server-role
+  apiGroup: rbac.authorization.k8s.io

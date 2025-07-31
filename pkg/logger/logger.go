@@ -2,6 +2,7 @@ package logger
 
 import (
 	"os"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -15,14 +16,23 @@ type Logger struct {
 func New(environment string) *Logger {
 	log := logrus.New()
 	
-	// Set output to stdout
+	// Set output to stdout for container logging
 	log.SetOutput(os.Stdout)
+	
+	// Add pod information to all logs
+	podName := os.Getenv("POD_NAME")
+	podIP := os.Getenv("POD_IP")
 	
 	// Configure based on environment
 	if environment == "production" {
 		log.SetLevel(logrus.InfoLevel)
 		log.SetFormatter(&logrus.JSONFormatter{
-			TimestampFormat: "2006-01-02T15:04:05.000Z07:00",
+			TimestampFormat: time.RFC3339Nano,
+			FieldMap: logrus.FieldMap{
+				logrus.FieldKeyTime:  "timestamp",
+				logrus.FieldKeyLevel: "level",
+				logrus.FieldKeyMsg:   "message",
+			},
 		})
 	} else {
 		log.SetLevel(logrus.DebugLevel)
@@ -31,6 +41,14 @@ func New(environment string) *Logger {
 			TimestampFormat: "2006-01-02 15:04:05",
 			ForceColors:     true,
 		})
+	}
+	
+	// Add default fields for all logs
+	if podName != "" {
+		log = log.WithField("pod_name", podName).Logger
+	}
+	if podIP != "" {
+		log = log.WithField("pod_ip", podIP).Logger
 	}
 
 	return &Logger{Logger: log}

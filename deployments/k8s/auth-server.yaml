@@ -1,0 +1,355 @@
+# Auth Server Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-server
+  namespace: auth-system
+  labels:
+    app.kubernetes.io/name: auth-server
+    app.kubernetes.io/component: application
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  replicas: 2  # High availability
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: auth-server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: auth-server
+        app.kubernetes.io/component: application
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: auth-server-sa
+      initContainers:
+      # Database migration init container
+      - name: db-migrate
+        image: IMAGE_TAG_PLACEHOLDER  # Will be replaced by CI/CD
+        command:
+        - /bin/sh
+        - -c
+        - |
+          echo "Waiting for database to be ready..."
+          until pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER; do
+            echo "Database not ready, waiting..."
+            sleep 2
+          done
+          echo "Running database migrations..."
+          /app/auth migrate up
+        env:
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: DB_HOST
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: DB_PORT
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: DB_NAME
+        - name: DB_USER
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: DB_USER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: auth-secrets
+              key: DB_PASSWORD
+        - name: DB_SSL_MODE
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: DB_SSL_MODE
+      containers:
+      - name: auth-server
+        image: IMAGE_TAG_PLACEHOLDER  # Will be replaced by CI/CD
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        env:
+        # Server configuration
+        - name: SERVER_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: SERVER_HOST
+        - name: SERVER_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: SERVER_PORT
+        - name: SERVER_ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: SERVER_ENVIRONMENT
+        - name: SERVER_READ_TIMEOUT
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: SERVER_READ_TIMEOUT
+        - name: SERVER_WRITE_TIMEOUT
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: SERVER_WRITE_TIMEOUT
+        
+        # Database configuration
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: DB_HOST
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: DB_PORT
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: DB_NAME
+        - name: DB_USER
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: DB_USER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: auth-secrets
+              key: DB_PASSWORD
+        - name: DB_SSL_MODE
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: DB_SSL_MODE
+        
+        # Redis configuration
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: REDIS_PORT
+        - name: REDIS_DB
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: REDIS_DB
+        
+        # Auth configuration
+        - name: JWT_ISSUER
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: JWT_ISSUER
+        - name: JWT_AUDIENCE
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: JWT_AUDIENCE
+        - name: ACCESS_TOKEN_EXPIRY
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: ACCESS_TOKEN_EXPIRY
+        - name: REFRESH_TOKEN_EXPIRY
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: REFRESH_TOKEN_EXPIRY
+        - name: AUTH_CODE_EXPIRY
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: AUTH_CODE_EXPIRY
+        - name: SESSION_EXPIRY
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: SESSION_EXPIRY
+        - name: MASTER_ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: auth-secrets
+              key: MASTER_ENCRYPTION_KEY
+        
+        # Security configuration
+        - name: RATE_LIMIT_REQUESTS
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: RATE_LIMIT_REQUESTS
+        - name: RATE_LIMIT_WINDOW
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: RATE_LIMIT_WINDOW
+        - name: PASSWORD_MIN_LENGTH
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: PASSWORD_MIN_LENGTH
+        - name: MAX_LOGIN_ATTEMPTS
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: MAX_LOGIN_ATTEMPTS
+        - name: LOCKOUT_DURATION
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: LOCKOUT_DURATION
+        
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        
+        # Health checks
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+        
+        # Security context
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        
+        # Volume mounts for logs and temp files
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: logs
+          mountPath: /app/logs
+      
+      # Security and performance settings
+      securityContext:
+        fsGroup: 1000
+      
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: logs
+        emptyDir: {}
+      
+      # Pod anti-affinity for high availability
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                  - auth-server
+              topologyKey: kubernetes.io/hostname
+
+---
+# Auth Server Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: auth-system
+  labels:
+    app.kubernetes.io/name: auth-server
+    app.kubernetes.io/component: application
+spec:
+  selector:
+    app.kubernetes.io/name: auth-server
+  ports:
+  - port: 80
+    targetPort: 8080
+    name: http
+    protocol: TCP
+  type: ClusterIP
+
+---
+# Service Account for auth server
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: auth-server-sa
+  namespace: auth-system
+  labels:
+    app.kubernetes.io/name: auth-server
+    app.kubernetes.io/component: serviceaccount
+
+---
+# Horizontal Pod Autoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: auth-server-hpa
+  namespace: auth-system
+  labels:
+    app.kubernetes.io/name: auth-server
+    app.kubernetes.io/component: autoscaler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: auth-server
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

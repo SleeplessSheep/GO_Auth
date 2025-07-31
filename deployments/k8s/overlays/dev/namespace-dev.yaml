@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: auth-system-dev
+  labels:
+    name: auth-system-dev
+    app.kubernetes.io/name: auth-server
+    app.kubernetes.io/component: namespace
+    environment: development
