@@ -29,118 +29,126 @@ spec:
         prometheus.io/path: "/metrics"
     spec:
       serviceAccountName: auth-server-sa
-      initContainers:
-      # Database migration init container
-      - name: db-migrate
-        image: IMAGE_TAG_PLACEHOLDER  # Will be replaced by CI/CD
-        command:
-        - /bin/sh
-        - -c
-        - |
-          echo "Waiting for database to be ready..."
-          until pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER; do
-            echo "Database not ready, waiting..."
-            sleep 2
-          done
-          echo "Running database migrations..."
-          /app/auth migrate up
-        env:
-        - name: DB_HOST
-          valueFrom:
-            configMapKeyRef:
-              name: auth-config
-              key: DB_HOST
-        - name: DB_PORT
-          valueFrom:
-            configMapKeyRef:
-              name: auth-config
-              key: DB_PORT
-        - name: DB_NAME
-          valueFrom:
-            configMapKeyRef:
-              name: auth-config
-              key: DB_NAME
-        - name: DB_USER
-          valueFrom:
-            configMapKeyRef:
-              name: auth-config
-              key: DB_USER
-        - name: DB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: auth-secrets
-              key: DB_PASSWORD
-        - name: DB_SSL_MODE
-          valueFrom:
-            configMapKeyRef:
-              name: auth-config
-              key: DB_SSL_MODE
+      # initContainers:
+      # # Database migration init container
+      # - name: db-migrate
+      #   image: IMAGE_TAG_PLACEHOLDER  # Will be replaced by CI/CD
+      #   command:
+      #   - /bin/sh
+      #   - -c
+      #   - |
+      #     echo "Waiting for database to be ready..."
+      #     until pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER; do
+      #       echo "Database not ready, waiting..."
+      #       sleep 2
+      #     done
+      #     echo "Running database migrations..."
+      #     /app/auth migrate up
+      #   env:
+      #   - name: DB_HOST
+      #     valueFrom:
+      #       configMapKeyRef:
+      #         name: auth-config
+      #         key: DB_HOST
+      #   - name: DB_PORT
+      #     valueFrom:
+      #       configMapKeyRef:
+      #         name: auth-config
+      #         key: DB_PORT
+      #   - name: DB_NAME
+      #     valueFrom:
+      #       configMapKeyRef:
+      #         name: auth-config
+      #         key: DB_NAME
+      #   - name: DB_USER
+      #     valueFrom:
+      #       configMapKeyRef:
+      #         name: auth-config
+      #         key: DB_USER
+      #   - name: DB_PASSWORD
+      #     valueFrom:
+      #       secretKeyRef:
+      #         name: auth-secrets
+      #         key: DB_PASSWORD
+      #   - name: DB_SSL_MODE
+      #     valueFrom:
+      #       configMapKeyRef:
+      #         name: auth-config
+      #         key: DB_SSL_MODE
       containers:
       - name: auth-server
-        image: IMAGE_TAG_PLACEHOLDER  # Will be replaced by CI/CD
+        image: auth-server:v3
+        imagePullPolicy: Never  # Use local image
         ports:
         - containerPort: 8080
           name: http
           protocol: TCP
         env:
-        # Server configuration
-        - name: SERVER_HOST
+        # Server configuration (with AUTH_ prefix for viper)
+        - name: AUTH_SERVER_HOST
           valueFrom:
             configMapKeyRef:
               name: auth-config
               key: SERVER_HOST
-        - name: SERVER_PORT
+        - name: AUTH_SERVER_PORT
           valueFrom:
             configMapKeyRef:
               name: auth-config
               key: SERVER_PORT
-        - name: SERVER_ENVIRONMENT
+        - name: AUTH_SERVER_ENVIRONMENT
           valueFrom:
             configMapKeyRef:
               name: auth-config
               key: SERVER_ENVIRONMENT
-        - name: SERVER_READ_TIMEOUT
+        - name: AUTH_SERVER_READ_TIMEOUT
           valueFrom:
             configMapKeyRef:
               name: auth-config
               key: SERVER_READ_TIMEOUT
-        - name: SERVER_WRITE_TIMEOUT
+        - name: AUTH_SERVER_WRITE_TIMEOUT
           valueFrom:
             configMapKeyRef:
               name: auth-config
               key: SERVER_WRITE_TIMEOUT
         
         # Database configuration
-        - name: DB_HOST
+        - name: AUTH_DATABASE_HOST
           valueFrom:
             configMapKeyRef:
               name: auth-config
               key: DB_HOST
-        - name: DB_PORT
+        - name: AUTH_DATABASE_PORT
           valueFrom:
             configMapKeyRef:
               name: auth-config
               key: DB_PORT
-        - name: DB_NAME
+        - name: AUTH_DATABASE_NAME
           valueFrom:
             configMapKeyRef:
               name: auth-config
               key: DB_NAME
-        - name: DB_USER
+        - name: AUTH_DATABASE_USER
           valueFrom:
             configMapKeyRef:
               name: auth-config
               key: DB_USER
-        - name: DB_PASSWORD
+        - name: AUTH_DATABASE_PASSWORD
           valueFrom:
             secretKeyRef:
               name: auth-secrets
               key: DB_PASSWORD
-        - name: DB_SSL_MODE
+        - name: AUTH_DATABASE_SSL_MODE
           valueFrom:
             configMapKeyRef:
               name: auth-config
               key: DB_SSL_MODE
+        
+        # Master encryption key for JWT signing
+        - name: AUTH_AUTH_MASTER_ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: auth-secrets
+              key: MASTER_ENCRYPTION_KEY
         
         # Redis configuration
         - name: REDIS_HOST

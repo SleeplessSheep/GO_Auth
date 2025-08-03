@@ -30,6 +30,22 @@ func SetupRoutes(
 	router.Use(authMiddleware.CORS())
 	router.Use(gin.Recovery())
 	
+	// Landing page
+	router.GET("/", func(c *gin.Context) {
+		c.HTML(200, "landing.html", gin.H{
+			"title": "SleeplessSheep's Auth Server",
+			"subtitle": "OAuth 2.1 & OIDC Identity Provider",
+			"features": []string{
+				"OAuth 2.1 Compliance",
+				"OpenID Connect",
+				"JWT with RS256",
+				"Multi-Provider Auth (Local + LDAP)",
+				"Kubernetes Ready",
+				"Hardened Security",
+			},
+		})
+	})
+	
 	// Health check endpoint
 	router.GET("/healthz", func(c *gin.Context) {
 		c.JSON(200, gin.H{

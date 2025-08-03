@@ -10,7 +10,7 @@ metadata:
   annotations:
     # Nginx ingress annotations
     nginx.ingress.kubernetes.io/rewrite-target: /
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"   # Enable SSL with origin cert
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
     
     # Rate limiting
@@ -36,18 +36,64 @@ metadata:
     # nginx.ingress.kubernetes.io/auth-tls-verify-client: "optional"
     # nginx.ingress.kubernetes.io/auth-tls-secret: "auth-system/client-certs"
     
-    # Let's Encrypt certificate (if using cert-manager)
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    # Using Cloudflare Origin Certificate - no cert-manager needed
 spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - auth.your-domain.com
-    - auth-api.your-domain.com
-    secretName: auth-tls-secret
+    - sleeplesssheeps.com
+    - auth.sleeplesssheeps.com
+    - api.sleeplesssheeps.com
+    - admin.sleeplesssheeps.com
+    - blog.sleeplesssheeps.com
+    secretName: cloudflare-origin-cert
   rules:
-  # Main auth server domain
-  - host: auth.your-domain.com
+  # Main portfolio domain
+  - host: sleeplesssheeps.com
+    http:
+      paths:
+      # OAuth/OIDC endpoints
+      - path: /.well-known
+        pathType: Prefix
+        backend:
+          service:
+            name: auth-service
+            port:
+              number: 80
+      - path: /oauth
+        pathType: Prefix
+        backend:
+          service:
+            name: auth-service
+            port:
+              number: 80
+      # Authentication endpoints
+      - path: /auth
+        pathType: Prefix
+        backend:
+          service:
+            name: auth-service
+            port:
+              number: 80
+      # Health checks
+      - path: /healthz
+        pathType: Prefix
+        backend:
+          service:
+            name: auth-service
+            port:
+              number: 80
+      # Root path
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: auth-service
+            port:
+              number: 80
+  
+  # Authentication service domain
+  - host: auth.sleeplesssheeps.com
     http:
       paths:
       # OAuth/OIDC endpoints
@@ -91,7 +137,7 @@ spec:
               number: 80
   
   # API domain (for programmatic access)
-  - host: auth-api.your-domain.com
+  - host: api.sleeplesssheeps.com
     http:
       paths:
       - path: /api
@@ -109,6 +155,32 @@ spec:
             port:
               number: 80
       - path: /.well-known
+        pathType: Prefix
+        backend:
+          service:
+            name: auth-service
+            port:
+              number: 80
+  
+  # Admin dashboard domain
+  - host: admin.sleeplesssheeps.com
+    http:
+      paths:
+      - path: /api/v1/admin
+        pathType: Prefix
+        backend:
+          service:
+            name: auth-service
+            port:
+              number: 80
+      - path: /auth
+        pathType: Prefix
+        backend:
+          service:
+            name: auth-service
+            port:
+              number: 80
+      - path: /
         pathType: Prefix
         backend:
           service:
@@ -146,21 +218,5 @@ spec:
             port:
               number: 80
 
----
-# Certificate for production (using cert-manager)
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: auth-tls-cert
-  namespace: auth-system
-  labels:
-    app.kubernetes.io/name: auth-server
-    app.kubernetes.io/component: certificate
-spec:
-  secretName: auth-tls-secret
-  issuerRef:
-    name: letsencrypt-prod
-    kind: ClusterIssuer
-  dnsNames:
-  - auth.your-domain.com
-  - auth-api.your-domain.com
+# Note: Certificate managed manually via Cloudflare Origin Certificate
+# Secret created with: kubectl create secret tls cloudflare-origin-cert ...

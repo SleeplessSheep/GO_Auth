@@ -42,6 +42,9 @@ COPY --from=builder /app/configs/config.example.yaml ./configs/
 # Copy migration files
 COPY --from=builder /app/migrations ./migrations/
 
+# Copy HTML templates
+COPY --from=builder /app/templates ./templates/
+
 # Set ownership
 RUN chown -R appuser:appgroup /app
 

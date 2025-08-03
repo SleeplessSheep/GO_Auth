@@ -39,12 +39,11 @@ func (h *AuthHandler) LoginPage(c *gin.Context) {
 		return
 	}
 	
-	// For now, return a simple JSON response
-	// TODO: Render proper HTML template
-	c.JSON(http.StatusOK, gin.H{
-		"message":    "Login page",
-		"return_url": returnURL,
-		"providers": []string{"local", "google"}, // Available auth providers
+	// Render login page template
+	c.HTML(http.StatusOK, "login.html", gin.H{
+		"title":         "SleeplessSheep's Auth Server",
+		"return_url":    returnURL,
+		"google_enabled": true, // TODO: Check if Google OAuth is configured
 	})
 }
 

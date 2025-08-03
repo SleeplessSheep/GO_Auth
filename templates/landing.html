@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.title}}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6; 
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 2rem;
+            text-align: center;
+        }
+        .hero { 
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 4rem 2rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin-bottom: 3rem;
+        }
+        h1 { 
+            font-size: 3rem; 
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .subtitle { 
+            font-size: 1.2rem; 
+            color: #666; 
+            margin-bottom: 2rem;
+        }
+        .features { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+        .feature { 
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        .buttons { 
+            display: flex; 
+            gap: 1rem; 
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn { 
+            padding: 12px 30px; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 1rem;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        .btn-primary { 
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+        .btn-secondary { 
+            background: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        .btn:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .tech-stack {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .tech-item {
+            background: #667eea;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        @media (max-width: 768px) {
+            h1 { font-size: 2rem; }
+            .container { padding: 1rem; }
+            .hero { padding: 2rem 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="hero">
+            <h1>{{.title}}</h1>
+            <p class="subtitle">{{.subtitle}}</p>
+            
+            <div class="features">
+                {{range .features}}
+                <div class="feature">
+                    <strong>{{.}}</strong>
+                </div>
+                {{end}}
+            </div>
+            
+            <div class="buttons">
+                <a href="/auth/login" class="btn btn-primary">Login / Register</a>
+                <a href="/.well-known/openid-configuration" class="btn btn-secondary">API Docs</a>
+                <a href="/healthz" class="btn btn-secondary">Health Check</a>
+            </div>
+        </div>
+        
+        <div class="tech-stack">
+            <h2>Built With</h2>
+            <div class="tech-grid">
+                <div class="tech-item">Go</div>
+                <div class="tech-item">Gin</div>
+                <div class="tech-item">PostgreSQL</div>
+                <div class="tech-item">Redis</div>
+                <div class="tech-item">Kubernetes</div>
+                <div class="tech-item">Docker</div>
+                <div class="tech-item">Cloudflare</div>
+                <div class="tech-item">GORM</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

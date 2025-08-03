@@ -109,6 +109,9 @@ func main() {
 	// Create Gin router
 	r := gin.New()
 	
+	// Load HTML templates
+	r.LoadHTMLGlob("templates/*")
+	
 	// Add Prometheus middleware
 	r.Use(middleware.PrometheusMiddleware())
 
